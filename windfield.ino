@@ -1,32 +1,57 @@
 #include <Bounce.h>
 
 //http://www.youtube.com/watch?v=Ug4YE4k0CRM
+//http://arduino.cc/forum/index.php/topic,111196.0.html
 
-// This code turns a led on/off through a debounced button
-// Build the circuit indicated here: http://arduino.cc/en/Tutorial/Button
 
-#define BUTTON 2
-//#define ZERO_CROSS 3
+#define ZERO_CROSS 2
 #define LED 13
+#define DIM 12
+#define BUTTON 3
 
-Bounce bouncer = Bounce( BUTTON,5 ); 
+int ledValue = LOW;
+int dim = 0;
+Bounce bouncer = Bounce( BUTTON, 5 ); 
 
-void setup() {                
+void setup() {
+  pinMode(BUTTON,INPUT);  
   pinMode(LED, OUTPUT);     
-  pinMode(BUTTON,INPUT);
+  pinMode(DIM, OUTPUT);     
   
-//  pinMode(ZERO_CROSS, INPUT);           // set pin to input
-//  digitalWrite(ZERO_CROSS, HIGH);       // turn on pullup resistors
+  pinMode(ZERO_CROSS, INPUT);           // set pin to input
+  attachInterrupt(0,zero, CHANGE);
+
+  Serial.begin(9600);  
 }
 
-void loop() {
-  bouncer.update();//updates the state and stores for later
+void zero() {
+  delayMicroseconds(65*dim);
+  digitalWrite(DIM, HIGH);
+//  digitalWrite(LED, HIGH);
   
- // Turn on or off the LED
- if ( bouncer.read() == HIGH) {
-   digitalWrite(LED, HIGH );
- } else {
-    digitalWrite(LED, LOW );
- }
+  delayMicroseconds(1000);
+  digitalWrite(DIM, LOW);
+//  digitalWrite(LED, LOW);
 }
 
+void loop()
+{
+    if ( bouncer.update() ) {
+     if ( bouncer.read() == HIGH) {
+       
+       if ( ledValue == LOW ) {
+         ledValue = HIGH;
+       } else {
+         ledValue = LOW;
+       }
+       digitalWrite(LED,ledValue);
+       
+       dim+= 10;
+       if(dim>128){
+         dim=0;
+       }
+       Serial.print(dim);
+       Serial.print('\n');
+     }
+   }
+}
