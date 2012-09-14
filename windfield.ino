@@ -11,6 +11,7 @@
 
 int ledValue = LOW;
 int dimTime = 4200;
+int zerocross = 0;
 boolean disableDimming = true;
 boolean totallyOn = false;
 boolean totallyOff = true;
@@ -28,9 +29,15 @@ void setup() {
   Serial.begin(9600);  
 }
 
-
+int period=16;
 
 void zero() {
+  zerocross++;
+  if(!( (zerocross % period) == 0 || (zerocross % period) == 1 ) )
+  {
+    //ultra low
+    return;
+  }
   /*
   60 Hz current
   1/2 period is (1/120) sec = 8333 micro seconds
