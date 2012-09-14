@@ -10,12 +10,9 @@
 #define BUTTON 3
 
 int ledValue = LOW;
-int dimTime = 4200;
 int zerocross = 0;
-boolean disableDimming = true;
-boolean totallyOn = false;
-boolean totallyOff = true;
 Bounce bouncer = Bounce( BUTTON, 5 ); 
+int period = 25;
 
 void setup() {
   pinMode(BUTTON,INPUT);  
@@ -29,25 +26,20 @@ void setup() {
   Serial.begin(9600);  
 }
 
-int period=16;
 
 void zero() {
   zerocross++;
-  if(!( (zerocross % period) == 0 || (zerocross % period) == 1 ) )
+  if((zerocross % period) == 0 || (zerocross % period) == 1 )
   {
     //ultra low
-    return;
+    digitalWrite(DIM, HIGH);
+  }else{
+    digitalWrite(DIM, LOW);    
   }
   /*
   60 Hz current
   1/2 period is (1/120) sec = 8333 micro seconds
   */
-  if(disableDimming) return;
-  
-  delayMicroseconds(dimTime);
-  digitalWrite(DIM, HIGH);
-  delayMicroseconds(8330 - 2 * dimTime);
-  digitalWrite(DIM, LOW);
 }
 
 void loop()
@@ -62,24 +54,12 @@ void loop()
        }
        digitalWrite(LED,ledValue);
        
-       dimTime -= 600;
-       if(dimTime < 0){
-         dimTime = 4200;
-       }
-
-       totallyOff = dimTime > 4100;
-       totallyOn = dimTime == 0;
-       
-       disableDimming = totallyOff || totallyOn;
-       
-       if(totallyOn){
-         digitalWrite(DIM, HIGH);
-       }
-       if(totallyOff){
-         digitalWrite(DIM, LOW);
+       period -= 1;
+       if(period < 0){
+         period = 25;
        }
        
-       Serial.print(dimTime);
+       Serial.print(period);
        Serial.print('\n');
      }
    }
