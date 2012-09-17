@@ -1,66 +1,133 @@
-#include <Bounce.h>
+//internal pull up: http://arduino.cc/en/Tutorial/InputPullupSerial
 
-//http://www.youtube.com/watch?v=Ug4YE4k0CRM
-//http://arduino.cc/forum/index.php/topic,111196.0.html
+struct Fan{
+  int angle;
+  int speed;
+  int wait;  //how long it attenuate, 0 means don't attenuate by wait
+  int mod;   //how many periods it should skip. 1 = none (always on); 0 means don't attenuate by period
+  //if wait==0 and mod==0, fan off
+  int relay; //which relay pin
+};
 
+const int FANS = 4;
+const int FAN_STARTING_PIN=30;
 
-#define ZERO_CROSS 2
-#define LED 13
-#define DIM 12
-#define BUTTON 3
+Fan fans[FANS];
+Fan fansByWait[FANS]; //every time you change a fan speed, recreate/reset this array
 
-int ledValue = LOW;
-int zerocross = 0;
-Bounce bouncer = Bounce( BUTTON, 5 ); 
-int period = 25;
-
-void setup() {
-  pinMode(BUTTON,INPUT);  
-  pinMode(LED, OUTPUT);     
-  pinMode(DIM, OUTPUT);     
-  digitalWrite(DIM, LOW);
-  
-  pinMode(ZERO_CROSS, INPUT);           // set pin to input
-  attachInterrupt(0,zero, CHANGE);
-
-  Serial.begin(9600);  
-}
-
-
-void zero() {
-  zerocross++;
-  if((zerocross % period) == 0 || (zerocross % period) == 1 )
-  {
-    //ultra low
-    digitalWrite(DIM, HIGH);
-  }else{
-    digitalWrite(DIM, LOW);    
+void setup(){
+  Serial.begin(115200);
+  for(int i=0; i<FANS; i++){
+    fans[i].relay= i + FAN_STARTING_PIN;
   }
-  /*
-  60 Hz current
-  1/2 period is (1/120) sec = 8333 micro seconds
-  */
 }
 
-void loop()
+
+void loop() {
+}
+
+/*
+ * send in F<fan number>A<angle>S<speed>
+ */
+
+void serialEvent() {
+  char firstChar = Serial.read();
+
+  if(firstChar != 'F'){
+    Serial.print("don't understand: ");
+    Serial.print(firstChar);
+    while (Serial.available() > 0) {
+    Serial.write(Serial.read());
+    }
+    Serial.print("\n");
+    return;
+  }
+
+  int fan = Serial.parseInt();
+  int angle = Serial.parseInt();
+  int speed = Serial.parseInt();
+
+  fans[fan].angle = angle;
+  fans[fan].speed = speed;
+
+  printFans();
+  updateFansByWait();
+  printFanWaits();
+  Serial.print('\n');
+}
+
+void printFans(){
+  for(int i=0; i<FANS; i++){
+    Fan fan = fans[i];
+    Serial.print("Fan ");
+    Serial.print(i);
+    Serial.print(" relay ");
+    Serial.print(fan.relay);
+    Serial.print(" angle ");
+    Serial.print(fan.angle);
+    Serial.print(" speed ");
+    Serial.print(fan.speed);
+    Serial.print(" wait ");
+    Serial.print(fan.wait);
+    Serial.print(" mod ");
+    Serial.println(fan.mod);
+  }
+}
+
+void printFanWaits(){
+  for(int i=0; i<FANS; i++){
+    Fan fan = fansByWait[i];
+    Serial.print("Fan ");
+    Serial.print(fan.relay);
+    Serial.print(" wait ");
+    Serial.println(fan.wait);
+  }
+}
+
+
+void updateFansByWait()
 {
-    if ( bouncer.update() ) {
-     if ( bouncer.read() == HIGH) {
-       
-       if ( ledValue == LOW ) {
-         ledValue = HIGH;
-       } else {
-         ledValue = LOW;
-       }
-       digitalWrite(LED,ledValue);
-       
-       period -= 1;
-       if(period < 0){
-         period = 25;
-       }
-       
-       Serial.print(period);
-       Serial.print('\n');
-     }
-   }
+  //copy vals
+  for(int i=0; i<FANS; i++)
+  {
+    fansByWait[i] = fans[i];
+  }
+
+  //bubble sort
+  for (int i = 1; i < FANS; ++i)
+  {
+    Fan j = fansByWait[i];
+    int k;
+    for (k = i - 1; (k >= 0) && (j.wait < fansByWait[k].wait); k--)
+    {
+      fansByWait[k + 1] = fansByWait[k];
+    }
+    fansByWait[k + 1] = j;
+  }
+}
+
+int nthCross;
+void onZeroCross()
+{
+  //handle the skipping of periods
+  nthCross++;
+  for(int i=0; i<FANS; i++){
+    Fan fan = fans[i];
+    boolean enable =  fan.mod != 0
+                      && (nthCross % fan.mod == 0); /*TODO: also mod 1?*/
+    digitalWrite(fan.relay, enable);
+  }
+
+  //handle wait times
+  int totalDelay = 0;
+  for(int i=0; i<FANS; i++){
+    Fan fan = fansByWait[i];
+    if(fan.wait == 0) continue;
+    int delayTime = fan.wait - totalDelay;
+    if(delayTime > 0){
+      delay(delayTime);
+      totalDelay += delayTime;
+    }
+    digitalWrite(fan.relay, HIGH);
+  }
 }
