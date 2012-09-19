@@ -1,4 +1,9 @@
-//internal pull up: http://arduino.cc/en/Tutorial/InputPullupSerial
+/*
+* TODO:
+* 1. Setup Mode (LED)
+*/
+
+#include <Servo.h>
 
 struct Fan{
   int angle;
@@ -7,23 +12,37 @@ struct Fan{
   int mod;   //how many periods it should skip. 1 = none (always on); 0 means don't attenuate by period
   //if wait==0 and mod==0, fan off
   int relay; //which relay pin
+  Servo servo;
+  int servoPosition; //the actual number sent to the servo
 };
 
 const int FANS = 4;
-const int FAN_STARTING_PIN=30;
+const int FAN_1ST_RELAY_PIN=30;
+const int FAN_1ST_SERVO_PIN=9;
 
 Fan fans[FANS];
 Fan fansByWait[FANS]; //every time you change a fan speed, recreate/reset this array
 
+const int SERVO_0_DEG= 40;
+const int SERVO_360_DEG = 140;
+const int MS_PER_DEG = 60;
+
 void setup(){
   Serial.begin(115200);
+
   for(int i=0; i<FANS; i++){
-    fans[i].relay= i + FAN_STARTING_PIN;
+    fans[i].relay = i + FAN_1ST_RELAY_PIN;
+    fans[i].servo.attach(i + FAN_1ST_SERVO_PIN);
+    fans[i].servo.write(SERVO_0_DEG);
+    fans[i].position = SERVO_0_DEG;
   }
+
+//  delay(6000);//wait for servos to get into position
 }
 
 
 void loop() {
+
 }
 
 /*
@@ -48,11 +67,14 @@ void serialEvent() {
   int speed = Serial.parseInt();
 
   fans[fan].angle = angle;
+  int servoPosition = constrain((angle/3.6)+SERVO_0_DEG,SERVO_0_DEG,SERVO_360_DEG);
+  fans[fan].servoPosition = servoPosition;
+  fans[fan].servo.write(servoPosition);
   fans[fan].speed = speed;
 
   printFans();
   updateFansByWait();
-  printFanWaits();
+//  printFanWaits();
   Serial.print('\n');
 }
 
@@ -65,6 +87,8 @@ void printFans(){
     Serial.print(fan.relay);
     Serial.print(" angle ");
     Serial.print(fan.angle);
+    Serial.print(" pos ");
+    Serial.print(fan.servoPosition);
     Serial.print(" speed ");
     Serial.print(fan.speed);
     Serial.print(" wait ");
