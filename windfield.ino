@@ -1,32 +1,157 @@
-#include <Bounce.h>
+/*
+* TODO:
+* 1. Setup Mode (LED)
+*/
 
-//http://www.youtube.com/watch?v=Ug4YE4k0CRM
+#include <Servo.h>
 
-// This code turns a led on/off through a debounced button
-// Build the circuit indicated here: http://arduino.cc/en/Tutorial/Button
+struct Fan{
+  int angle;
+  int speed;
+  int wait;  //how long it attenuate, 0 means don't attenuate by wait
+  int mod;   //how many periods it should skip. 1 = none (always on); 0 means don't attenuate by period
+  //if wait==0 and mod==0, fan off
+  int relay; //which relay pin
+  Servo servo;
+  int servoPosition; //the actual number sent to the servo
+};
 
-#define BUTTON 2
-//#define ZERO_CROSS 3
-#define LED 13
+const int FANS = 4;
+const int FAN_1ST_RELAY_PIN=30;
+const int FAN_1ST_SERVO_PIN=9;
 
-Bounce bouncer = Bounce( BUTTON,5 ); 
+Fan fans[FANS];
+Fan fansByWait[FANS]; //every time you change a fan speed, recreate/reset this array
 
-void setup() {                
-  pinMode(LED, OUTPUT);     
-  pinMode(BUTTON,INPUT);
-  
-//  pinMode(ZERO_CROSS, INPUT);           // set pin to input
-//  digitalWrite(ZERO_CROSS, HIGH);       // turn on pullup resistors
+const int SERVO_0_DEG= 40;
+const int SERVO_360_DEG = 140;
+const int MS_PER_DEG = 60;
+
+void setup(){
+  Serial.begin(115200);
+
+  for(int i=0; i<FANS; i++){
+    fans[i].relay = i + FAN_1ST_RELAY_PIN;
+    fans[i].servo.attach(i + FAN_1ST_SERVO_PIN);
+    fans[i].servo.write(SERVO_0_DEG);
+    fans[i].position = SERVO_0_DEG;
+  }
+
+//  delay(6000);//wait for servos to get into position
 }
+
 
 void loop() {
-  bouncer.update();//updates the state and stores for later
-  
- // Turn on or off the LED
- if ( bouncer.read() == HIGH) {
-   digitalWrite(LED, HIGH );
- } else {
-    digitalWrite(LED, LOW );
- }
+
 }
 
+/*
+ * send in F<fan number>A<angle>S<speed>
+ */
+
+void serialEvent() {
+  char firstChar = Serial.read();
+
+  if(firstChar != 'F'){
+    Serial.print("don't understand: ");
+    Serial.print(firstChar);
+    while (Serial.available() > 0) {
+    Serial.write(Serial.read());
+    }
+    Serial.print("\n");
+    return;
+  }
+
+  int fan = Serial.parseInt();
+  int angle = Serial.parseInt();
+  int speed = Serial.parseInt();
+
+  fans[fan].angle = angle;
+  int servoPosition = constrain((angle/3.6)+SERVO_0_DEG,SERVO_0_DEG,SERVO_360_DEG);
+  fans[fan].servoPosition = servoPosition;
+  fans[fan].servo.write(servoPosition);
+  fans[fan].speed = speed;
+
+  printFans();
+  updateFansByWait();
+//  printFanWaits();
+  Serial.print('\n');
+}
+
+void printFans(){
+  for(int i=0; i<FANS; i++){
+    Fan fan = fans[i];
+    Serial.print("Fan ");
+    Serial.print(i);
+    Serial.print(" relay ");
+    Serial.print(fan.relay);
+    Serial.print(" angle ");
+    Serial.print(fan.angle);
+    Serial.print(" pos ");
+    Serial.print(fan.servoPosition);
+    Serial.print(" speed ");
+    Serial.print(fan.speed);
+    Serial.print(" wait ");
+    Serial.print(fan.wait);
+    Serial.print(" mod ");
+    Serial.println(fan.mod);
+  }
+}
+
+void printFanWaits(){
+  for(int i=0; i<FANS; i++){
+    Fan fan = fansByWait[i];
+    Serial.print("Fan ");
+    Serial.print(fan.relay);
+    Serial.print(" wait ");
+    Serial.println(fan.wait);
+  }
+}
+
+
+void updateFansByWait()
+{
+  //copy vals
+  for(int i=0; i<FANS; i++)
+  {
+    fansByWait[i] = fans[i];
+  }
+
+  //bubble sort
+  for (int i = 1; i < FANS; ++i)
+  {
+    Fan j = fansByWait[i];
+    int k;
+    for (k = i - 1; (k >= 0) && (j.wait < fansByWait[k].wait); k--)
+    {
+      fansByWait[k + 1] = fansByWait[k];
+    }
+    fansByWait[k + 1] = j;
+  }
+}
+
+int nthCross;
+void onZeroCross()
+{
+  //handle the skipping of periods
+  nthCross++;
+  for(int i=0; i<FANS; i++){
+    Fan fan = fans[i];
+    boolean enable =  fan.mod != 0
+                      && (nthCross % fan.mod == 0); /*TODO: also mod 1?*/
+    digitalWrite(fan.relay, enable);
+  }
+
+  //handle wait times
+  int totalDelay = 0;
+  for(int i=0; i<FANS; i++){
+    Fan fan = fansByWait[i];
+    if(fan.wait == 0) continue;
+    int delayTime = fan.wait - totalDelay;
+    if(delayTime > 0){
+      delay(delayTime);
+      totalDelay += delayTime;
+    }
+    digitalWrite(fan.relay, HIGH);
+  }
+}
