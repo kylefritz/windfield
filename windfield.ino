@@ -1,8 +1,3 @@
-/*
-* TODO:
-* 1. Setup Mode (LED)
-*/
-
 #include <Servo.h>
 
 struct Fan{
@@ -10,6 +5,7 @@ struct Fan{
   int speed;
   int wait;  //how long it attenuate, 0 means don't attenuate by wait
   int mod;   //how many periods it should skip. 1 = none (always on); 0 means don't attenuate by period
+  //good values for mod: 9, 7, 5, 3
   //if wait==0 and mod==0, fan off
   int relay; //which relay pin
   Servo servo;
@@ -33,6 +29,7 @@ void setup(){
 
   for(int i=0; i<FANS; i++){
     fans[i].relay = i + FAN_1ST_RELAY_PIN;
+    pinMode(fans[i].relay, OUTPUT);
     fans[i].servo.attach(i + FAN_1ST_SERVO_PIN);
     fans[i].servo.write(SERVO_0_DEG);
     fans[i].servoPosition = SERVO_0_DEG;
@@ -42,6 +39,8 @@ void setup(){
   attachInterrupt(0, onZeroCross, CHANGE);
   pinMode(13, OUTPUT);
   digitalWrite(13,LOW);
+  
+//  digitalWrite(fans[0].relay, HIGH);
 //  delay(6000);//wait for servos to get into position
 }
 
@@ -142,21 +141,23 @@ void onZeroCross()
   nthCross++;
   for(int i=0; i<FANS; i++){
     Fan fan = fans[i];
-    boolean enable =  fan.mod != 0
-                      && (nthCross % fan.mod == 0); /*TODO: also mod 1?*/
-    digitalWrite(fan.relay, enable?HIGH:LOW);
+    if(fan.mod == 0) continue;
+    
+    int mod = nthCross%fan.mod;
+    boolean enable =  mod==0||mod==1;
+    digitalWrite(fan.relay, (mod==0||mod==1)?HIGH:LOW);
   }
 
   //handle wait times
-  int totalDelay = 0;
-  for(int i=0; i<FANS; i++){
-    Fan fan = fansByWait[i];
-    if(fan.wait == 0) continue;
-    int delayTime = fan.wait - totalDelay;
-    if(delayTime > 0){
-      delay(delayTime);
-      totalDelay += delayTime;
-    }
-    digitalWrite(fan.relay, HIGH);
-  }
+//  int totalDelay = 0;
+//  for(int i=0; i<FANS; i++){
+//    Fan fan = fansByWait[i];
+//    if(fan.wait == 0) continue;
+//    int delayTime = fan.wait - totalDelay;
+//    if(delayTime > 0){
+//      delay(delayTime);
+//      totalDelay += delayTime;
+//    }
+//    digitalWrite(fan.relay, HIGH);
+//  }
 }
