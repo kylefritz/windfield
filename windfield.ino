@@ -19,6 +19,7 @@ struct Fan{
 const int FANS = 4;
 const int FAN_1ST_RELAY_PIN=30;
 const int FAN_1ST_SERVO_PIN=9;
+const int ZERO_CROSS_PIN=2;
 
 Fan fans[FANS];
 Fan fansByWait[FANS]; //every time you change a fan speed, recreate/reset this array
@@ -34,16 +35,17 @@ void setup(){
     fans[i].relay = i + FAN_1ST_RELAY_PIN;
     fans[i].servo.attach(i + FAN_1ST_SERVO_PIN);
     fans[i].servo.write(SERVO_0_DEG);
-    fans[i].position = SERVO_0_DEG;
+    fans[i].servoPosition = SERVO_0_DEG;
   }
-
+  
+  pinMode(ZERO_CROSS_PIN, INPUT); 
+  attachInterrupt(0, onZeroCross, CHANGE);
+  pinMode(13, OUTPUT);
+  digitalWrite(13,LOW);
 //  delay(6000);//wait for servos to get into position
 }
 
-
-void loop() {
-
-}
+void loop() {}
 
 /*
  * send in F<fan number>A<angle>S<speed>
@@ -56,7 +58,7 @@ void serialEvent() {
     Serial.print("don't understand: ");
     Serial.print(firstChar);
     while (Serial.available() > 0) {
-    Serial.write(Serial.read());
+      Serial.write(Serial.read());
     }
     Serial.print("\n");
     return;
@@ -71,6 +73,7 @@ void serialEvent() {
   fans[fan].servoPosition = servoPosition;
   fans[fan].servo.write(servoPosition);
   fans[fan].speed = speed;
+  fans[fan].mod = speed;
 
   printFans();
   updateFansByWait();
@@ -133,13 +136,15 @@ void updateFansByWait()
 int nthCross;
 void onZeroCross()
 {
+  digitalWrite(13, (nthCross % 2) ?HIGH:LOW);
+  
   //handle the skipping of periods
   nthCross++;
   for(int i=0; i<FANS; i++){
     Fan fan = fans[i];
     boolean enable =  fan.mod != 0
                       && (nthCross % fan.mod == 0); /*TODO: also mod 1?*/
-    digitalWrite(fan.relay, enable);
+    digitalWrite(fan.relay, enable?HIGH:LOW);
   }
 
   //handle wait times
