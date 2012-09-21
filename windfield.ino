@@ -6,7 +6,7 @@ struct Fan{
 };
 
 const int FANS = 4;
-const int FAN_1ST_RELAY_PIN=30;
+const int FAN_1ST_RELAY_PIN=3;
 const int FAN_1ST_SERVO_PIN=9;
 const int ZERO_CROSS_PIN=2;
 
@@ -18,6 +18,28 @@ const int SERVO_360_DEG = 140;
 //fan state
 int angle = 0; // a-s (0-18)
 int speed = 0; //a-s (0-18)
+
+/*
+a   0 0
+b  20 1
+c  40 2
+d  60 3
+e  80 4
+f 100 5
+g 120 6
+h 140 7
+i 160 8
+l 180 9
+k 200 10
+l 220 11
+m 240 12
+n 260 13
+o 280 14
+p 300 15
+q 320 16
+r 340 17
+s 360 18
+*/
 
 void setup(){
   Serial.begin(115200);
@@ -38,10 +60,6 @@ void setup(){
 }
 
 void loop() {}
-
-/*
- * send in F<fan number>A<angle>S<speed>
- */
 
 void serialEvent() {
   
