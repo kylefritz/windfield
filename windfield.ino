@@ -17,7 +17,7 @@ const int SERVO_360_DEG = 140;
 
 //fan state
 int angle = 0; // a-s (0-18)
-int speed = 0; //a-l (0-11)
+int speed = 0; //a-s (0-18)
 
 void setup(){
   Serial.begin(115200);
@@ -44,22 +44,9 @@ void loop() {}
  */
 
 void serialEvent() {
-//  char firstChar = Serial.read();
-//
-//  if(firstChar != 'a'){
-//    Serial.print("don't understand: ");
-//    Serial.print(firstChar);
-//    while (Serial.available() > 0) {
-//      Serial.write(Serial.read());
-//    }
-//    Serial.print("\n");
-//    return;
-//  }
-  int _=0;
-  while (Serial.available() < 2) {
-    //wait
-    _++;
-  }
+  
+  int _;
+  while (Serial.available() < 2) { _++; }
   
   angle = 20*((int)Serial.read() - 'a');
   speed = (int)Serial.read() - 'a';
@@ -93,7 +80,7 @@ void onZeroCross()
   if(speed <= 0){
     switchFans(LOW);
   }
-  else if(speed > 10)
+  else if(speed > 17)
   {
     switchFans(HIGH);
   }
@@ -106,7 +93,7 @@ void onZeroCross()
   else
   {
     //if(4 < speed <= 10)
-    int dimTime = 3500 - 500*(speed-4); //(3.5k, 3k, 2.5k, 2k, 1.5k, 1k)
+    int dimTime = 7000 - 500*(speed-4); //(7k-1k by 500)
     switchFans(LOW);
     delayMicroseconds(dimTime);
     switchFans(HIGH);
