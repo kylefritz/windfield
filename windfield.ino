@@ -16,8 +16,8 @@ const int SERVO_0_DEG= 40;
 const int SERVO_360_DEG = 140;
 
 //fan state
-volatile int angle = 0;
-volatile int speed = 0;
+int angle = 0; // a-s (0-18)
+int speed = 0; //a-l (0-11)
 
 void setup(){
   Serial.begin(115200);
@@ -44,20 +44,25 @@ void loop() {}
  */
 
 void serialEvent() {
-  char firstChar = Serial.read();
-
-  if(firstChar != 'a'){
-    Serial.print("don't understand: ");
-    Serial.print(firstChar);
-    while (Serial.available() > 0) {
-      Serial.write(Serial.read());
-    }
-    Serial.print("\n");
-    return;
+//  char firstChar = Serial.read();
+//
+//  if(firstChar != 'a'){
+//    Serial.print("don't understand: ");
+//    Serial.print(firstChar);
+//    while (Serial.available() > 0) {
+//      Serial.write(Serial.read());
+//    }
+//    Serial.print("\n");
+//    return;
+//  }
+  int _=0;
+  while (Serial.available() < 2) {
+    //wait
+    _++;
   }
   
-  angle = Serial.parseInt();
-  speed = Serial.parseInt();
+  angle = 20*((int)Serial.read() - 'a');
+  speed = (int)Serial.read() - 'a';
   
   Serial.print("angle ");
   Serial.print(angle);
@@ -85,7 +90,7 @@ void onZeroCross()
   nthCross++;
   digitalWrite(13, (nthCross % 2) ?HIGH:LOW);
   
-  if(speed==0){
+  if(speed <= 0){
     switchFans(LOW);
   }
   else if(speed > 10)
