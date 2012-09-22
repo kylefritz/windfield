@@ -2,18 +2,10 @@ require 'sinatra'
 require './degrib'
 require 'json'
 require 'serialport'
+require 'zmq'
 
-SERIAL_PORT='/dev/tty.usbmodem1411'
-NDFD_DATA='/Users/kpf/Desktop/'
+$stdout.sync = true
 
-baud_rate = 9600
-data_bits = 8
-stop_bits = 1
-parity = SerialPort::NONE
-
-#serial port open/closing restarts the arduino
-sp = SerialPort.open(SERIAL_PORT, baud_rate, data_bits, stop_bits, parity)
-puts "opened serial port #{sp}"
 
 enable  :sessions, :logging
 
@@ -27,9 +19,13 @@ post '/wind' do
 
   letters='abcdefghijklmnopqrs'
   cmd = "#{letters[direction.round/20]}#{letters[speed.round]}"
-  puts "will send '#{cmd}' to serial port for #{speed} knots @ #{direction}\n"
+  puts "send '#{cmd}' to serial port via zmq for #{speed} knots @ #{direction}\n"
 
-  sp.write(cmd)
+  #zmq
+  context = ZMQ::Context.new(1)
+  outbound = context.socket(ZMQ::DOWNSTREAM)
+  outbound.connect("tcp://127.0.0.1:9000")
+  status = outbound.send(cmd)
 
   content_type :json
   {
