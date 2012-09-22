@@ -6,6 +6,7 @@ require 'zmq'
 
 $stdout.sync = true
 
+context = ZMQ::Context.new(1)
 
 enable  :sessions, :logging
 
@@ -22,7 +23,6 @@ post '/wind' do
   puts "send '#{cmd}' to serial port via zmq for #{speed} knots @ #{direction}\n"
 
   #zmq
-  context = ZMQ::Context.new(1)
   outbound = context.socket(ZMQ::DOWNSTREAM)
   outbound.connect("tcp://127.0.0.1:9000")
   status = outbound.send(cmd)
