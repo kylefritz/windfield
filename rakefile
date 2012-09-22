@@ -1,0 +1,9 @@
+task :get_weather do
+  noaa_path='ftp://tgftp.nws.noaa.gov/SL.us008001/ST.opnl/DF.gr2/DC.ndfd/AR.conus/VP.001-003/'
+
+  Dir.mkdir 'data' unless Dir.exists? 'data'
+  ['ds.wdir.bin', 'ds.wspd.bin'].each do |f|
+    out = File.join('data',f)
+    `curl "#{noaa_path}#{f}" > #{out}`
+  end
+end

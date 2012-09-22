@@ -1,0 +1,72 @@
+<form id="place-form" class="form-horizontal">
+  <fieldset>
+    <legend>Where in the wind?</legend>
+
+    <div class="control-group">
+      <label class="control-label" for="inputEmail">Place</label>
+      <div class="controls">
+        <input type="text" id="place" placeholder="Baltimore, MD">
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-large btn-block">Update Field</button>
+    </div>
+  </fieldset>
+</div>
+
+<script type="text/javascript">
+  gecode = function(place){
+    var deferred = new $.Deferred();
+    var maps = window.google.maps;
+    (new maps.Geocoder()).geocode({region: 'us', address:place}, function (locations, status) {
+        if (status != maps.GeocoderStatus.OK
+            || locations.length == 0) {
+            deferred.reject();
+            return;
+        }
+        var loc=locations[0];
+        deferred.resolve({
+            address: loc.formatted_address,
+            position: loc.geometry.location.toUrlValue()
+        });
+    });
+    return deferred
+  }
+
+  $(function(){
+
+
+    $('#place-form').submit(function (e) {
+      e.preventDefault();
+      var $place=$('#place');
+      var address = $place.val();
+      $('#position,#speed,#dir').text('')
+      if(!address){
+        alert('Enter a place.');
+        return;
+      }
+      $('button').button('loading');
+      gecode(address).done(function(location){
+        $place.val(location.address);
+        console.log(location.address, location.position);
+        $.ajax({
+          type: 'POST',
+          headers: {Accept : "text/json"},
+          url: '/wind',
+          data: {position: location.position}
+        }).done(function(wind){
+          console.log('speed',wind.speed,'direction',wind.direction);
+        }).fail(function(){
+          alert("Couldn't get wind. Try again.")
+        })
+
+      }).fail(function(){
+        alert("Couldn't locate the place. Try again.")
+      }).always(function(){ $('button').button('reset'); })
+
+
+    })
+
+  });
+</script>

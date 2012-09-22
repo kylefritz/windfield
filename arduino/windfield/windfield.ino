@@ -122,7 +122,7 @@ void onZeroCross()
   }
   else
   {
-    //if(4 < speed <= 10)
+    //if(4 < speed <= 17)
     int dimTime = 7000 - 500*(speed-4); //(7k-1k by 500)
     switchFans(LOW);
     delayMicroseconds(dimTime);

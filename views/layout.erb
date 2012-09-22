@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Wind Field</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="White Lies Collective">
+    <link rel="stylesheet" href="https://d1eiylix7lbou2.cloudfront.net/ffe/vendor/bootstrap-2.1.1/css/bootstrap.min.css" />
+    <link href="/style.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://d1eiylix7lbou2.cloudfront.net/ffe/vendor/bootstrap-2.1.1/css/bootstrap-responsive.min.css" />
+
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!--
+    TODO: pack js, load at bottom
+    -->
+    <script src="https://ajax.aspnetcdn.com/ajax/jquery/jquery-1.8.1.min.js"></script>
+    <script src="https://d1eiylix7lbou2.cloudfront.net/ffe/vendor/bootstrap-2.1.1/js/bootstrap.min.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?libraries=geometry&sensor=false"></script>
+
+  </head>
+
+  <body>
+
+    <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container-fluid">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="/">Wind Field</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+    <div class="container-fluid">
+      <div class="row-fluid">
+        <%= yield %>
+      </div>
+    </div>
+    <hr/>
+    <footer>
+      <p>&copy; White Lies Collective 2012</p>
+    </footer>
+  </body>
+</html>
