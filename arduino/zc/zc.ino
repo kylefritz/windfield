@@ -3,8 +3,8 @@ const int ZERO_CROSS_PIN=2;
 
 void setup(){
   Serial.begin(115200);
-  
-  pinMode(ZERO_CROSS_PIN, INPUT); 
+
+  pinMode(ZERO_CROSS_PIN, INPUT);
   attachInterrupt(0, zero, CHANGE);
   pinMode(13, OUTPUT);
   digitalWrite(13,LOW);
@@ -12,10 +12,6 @@ void setup(){
 }
 
 void loop() {}
-
-/*
- * send in F<fan number>A<angle>S<speed>
- */
 
 void serialEvent() {
   char firstChar = Serial.read();
@@ -38,7 +34,7 @@ void serialEvent() {
 void zero()
 {
   digitalWrite(13, (nthCross % 2) ?HIGH:LOW);
-  
+
   //handle the skipping of periods
   nthCross++;
 }
