@@ -2,6 +2,7 @@
 
 Arduino and Ruby Code
 
+[Assembly Instructions](https://docs.google.com/document/d/1ohnpCJSlR_QD47BrCeZ0PKtYXmi4sl8A68WsWXDrTDA/edit)
 
 ##Requirements
 
