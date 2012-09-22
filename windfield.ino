@@ -29,7 +29,7 @@ f 100 5
 g 120 6
 h 140 7
 i 160 8
-l 180 9
+j 180 9
 k 200 10
 l 220 11
 m 240 12
@@ -42,7 +42,7 @@ s 360 18
 */
 
 void setup(){
-  Serial.begin(115200);
+  Serial.begin(9600);
 
   //servo
   for(int i=0; i<FANS; i++){
@@ -56,6 +56,18 @@ void setup(){
   attachInterrupt(0, onZeroCross, CHANGE);
   
   pinMode(13, OUTPUT);
+  digitalWrite(13,LOW);
+  blink(500);
+  blink(500);
+  blink(500);
+}
+
+void blink(int ms)
+{
+  digitalWrite(13,LOW);
+  delay(ms/2);
+  digitalWrite(13,HIGH);
+  delay(ms/2);
   digitalWrite(13,LOW);
 }
 
@@ -93,7 +105,7 @@ int nthCross;
 void onZeroCross()
 {
   nthCross++;
-  digitalWrite(13, (nthCross % 2) ?HIGH:LOW);
+//  digitalWrite(13, (nthCross % 2) ?HIGH:LOW);
   
   if(speed <= 0){
     switchFans(LOW);
